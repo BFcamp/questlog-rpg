@@ -250,12 +250,11 @@ export function BandejaScreen() {
                     <button onClick={() => setAsignandoDirecto(item)} style={{ background: typeColor(item.type) + "22", border: `1px solid ${typeColor(item.type)}44`, borderRadius: 8, padding: "5px 10px", cursor: "pointer", color: typeColor(item.type), fontSize: 11, fontWeight: 600 }}>
                       Asignar {item.type === "rutina" ? "terreno" : "campaña"}
                     </button>
-                    {item.type && !necesitaAsignacion(item) && (
-                      <button
-                        onClick={() => clasificar(item.id, item.type, null, null, false)}
-                        style={{ background: typeColor(item.type) + "22", border: `1px solid ${typeColor(item.type)}44`, borderRadius: 8, padding: "5px 10px", cursor: "pointer", color: typeColor(item.type), fontSize: 11, fontWeight: 600 }}>
-                        Mover a {typeLabel[item.type]}
-                      </button>
+                  )}
+                  {item.type && !necesitaAsignacion(item) && (
+                    <button onClick={() => clasificar(item.id, item.type, null, null, false)} style={{ background: typeColor(item.type) + "22", border: `1px solid ${typeColor(item.type)}44`, borderRadius: 8, padding: "5px 10px", cursor: "pointer", color: typeColor(item.type), fontSize: 11, fontWeight: 600 }}>
+                      Mover a {typeLabel[item.type]}
+                    </button>
                   )}
                   <button onClick={() => setEditando(item)} style={{ background: "transparent", border: `1px solid ${COLORS.border}`, borderRadius: 8, padding: "5px 10px", cursor: "pointer", color: COLORS.textMuted, fontSize: 11 }}>✎</button>
                   <button onClick={() => eliminar(item.id)} style={{ background: "transparent", border: `1px solid ${COLORS.border}`, borderRadius: 8, padding: "5px 10px", cursor: "pointer", color: COLORS.textMuted, fontSize: 11 }}>×</button>
