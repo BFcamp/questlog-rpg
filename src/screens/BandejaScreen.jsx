@@ -180,7 +180,8 @@ export function BandejaScreen() {
       }
       await supabase.from("tasks").insert([{ type: "campana", label: item.text, campana_id: cid, done: false }]);
     } else {
-      await supabase.from("tasks").insert([{ type, label: item.text, done: false }]);
+      const extra = type === "encargo" ? { priority: "simple" } : {};
+      await supabase.from("tasks").insert([{ type, label: item.text, done: false, ...extra }]);
     }
 
     await supabase.from("bandeja").delete().eq("id", id);
