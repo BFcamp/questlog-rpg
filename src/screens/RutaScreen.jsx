@@ -6,14 +6,19 @@ import { Checkbox } from "../components/Checkbox";
 import { Badge } from "../components/Badge";
 import { Loading } from "../components/Loading";
 
-function RutaDetail({ ruta, steps, onBack, onComplete, onToggleStep }) {
+function RutaDetail({ ruta, steps, onBack, onComplete, onToggleStep, onEditRuta, onDeleteRuta, onEditStep, onDeleteStep }) {
   const [showCelebration, setShowCelebration] = useState(ruta.completed);
+  const [editandoRuta, setEditandoRuta] = useState(false);
+  const [editandoStep, setEditandoStep] = useState(null);
+  const [editNombre, setEditNombre] = useState(ruta.name);
+  const [editStepLabel, setEditStepLabel] = useState("");
   const done = steps.filter(s => s.done).length;
   const pct = steps.length ? Math.round((done / steps.length) * 100) : 0;
 
   const handleToggle = async (stepId) => {
     await onToggleStep(ruta.id, stepId);
-    if (steps.filter(s => s.id === stepId ? !s.done : s.done).length === steps.length) {
+    const updated = steps.map(s => s.id === stepId ? { ...s, done: !s.done } : s);
+    if (updated.every(s => s.done)) {
       setTimeout(() => { setShowCelebration(true); onComplete(ruta.id); }, 300);
     }
   };
@@ -33,8 +38,13 @@ function RutaDetail({ ruta, steps, onBack, onComplete, onToggleStep }) {
   }
 
   return (
-    <div>
-      <button onClick={onBack} style={{ background: "none", border: "none", color: COLORS.textMuted, cursor: "pointer", fontSize: 13, marginBottom: 16, padding: 0 }}>← Rutas</button>
+    <div style={{ position: "relative" }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
+        <button onClick={onBack} style={{ background: "none", border: "none", color: COLORS.textMuted, cursor: "pointer", fontSize: 13, padding: 0 }}>← Rutas</button>
+        <button onClick={() => { setEditandoRuta(true); setEditNombre(ruta.name); }}
+          style={{ background: "none", border: `1px solid ${COLORS.border}`, borderRadius: 8, padding: "5px 10px", cursor: "pointer", color: COLORS.textMuted, fontSize: 12 }}>✎ Editar</button>
+      </div>
+
       <div style={{ marginBottom: 4 }}>
         <div style={{ fontSize: 22, fontWeight: 700, color: COLORS.text, fontFamily: "Georgia, serif" }}>{ruta.name}</div>
         <div style={{ fontSize: 13, color: COLORS.textMuted, marginTop: 2 }}>{done}/{steps.length} pasos · {pct}%</div>
@@ -42,6 +52,7 @@ function RutaDetail({ ruta, steps, onBack, onComplete, onToggleStep }) {
       <div style={{ height: 6, background: COLORS.border, borderRadius: 3, overflow: "hidden", marginBottom: 20 }}>
         <div style={{ width: `${pct}%`, height: "100%", background: COLORS.ruta, borderRadius: 3 }} />
       </div>
+
       <div style={{ position: "relative" }}>
         <div style={{ position: "absolute", left: 21, top: 0, bottom: 0, width: 2, background: COLORS.border, zIndex: 0 }} />
         <div style={{ display: "flex", flexDirection: "column", gap: 10, position: "relative", zIndex: 1 }}>
@@ -50,18 +61,58 @@ function RutaDetail({ ruta, steps, onBack, onComplete, onToggleStep }) {
               <div style={{ width: 22, height: 22, borderRadius: "50%", flexShrink: 0, background: s.done ? COLORS.accent : COLORS.surfaceLight, border: `2px solid ${s.done ? COLORS.accent : COLORS.border}`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 800, color: s.done ? COLORS.bg : COLORS.textMuted }}>{s.done ? "✓" : i + 1}</div>
               <div style={{ flex: 1, background: COLORS.surface, borderRadius: 10, padding: "10px 12px", border: `1px solid ${s.done ? COLORS.border : COLORS.ruta + "44"}`, display: "flex", alignItems: "center", gap: 10 }}>
                 <span style={{ flex: 1, fontSize: 14, color: s.done ? COLORS.textMuted : COLORS.text, textDecoration: s.done ? "line-through" : "none" }}>{s.label}</span>
-                <Badge type={s.type} small />
+                <Badge type={s.type || "encargo"} small />
                 <Checkbox done={s.done} onChange={() => handleToggle(s.id)} />
+                {!s.done && (
+                  <button onClick={() => { setEditandoStep(s); setEditStepLabel(s.label); }}
+                    style={{ background: "none", border: `1px solid ${COLORS.border}`, borderRadius: 6, width: 26, height: 26, cursor: "pointer", color: COLORS.textMuted, fontSize: 11, display: "flex", alignItems: "center", justifyContent: "center" }}>✎</button>
+                )}
               </div>
             </div>
           ))}
         </div>
       </div>
+
+      {/* Modal editar ruta */}
+      {editandoRuta && (
+        <div style={{ position: "fixed", inset: 0, background: "#000000bb", zIndex: 100, display: "flex", alignItems: "flex-end" }} onClick={() => setEditandoRuta(false)}>
+          <div onClick={e => e.stopPropagation()} style={{ width: "100%", background: COLORS.surface, borderRadius: "20px 20px 0 0", padding: "20px 16px 28px", border: `1px solid ${COLORS.border}`, boxSizing: "border-box" }}>
+            <div style={{ width: 36, height: 4, background: COLORS.border, borderRadius: 2, margin: "0 auto 20px" }} />
+            <div style={{ fontSize: 16, fontWeight: 700, color: COLORS.text, marginBottom: 16 }}>Editar ruta</div>
+            <input value={editNombre} onChange={e => setEditNombre(e.target.value)} placeholder="Nombre de la ruta"
+              style={{ width: "100%", background: COLORS.surfaceLight, border: `1px solid ${COLORS.border}`, borderRadius: 10, padding: "11px 14px", color: COLORS.text, fontSize: 14, outline: "none", marginBottom: 20, boxSizing: "border-box" }} />
+            <div style={{ display: "flex", gap: 8 }}>
+              <button onClick={() => { onEditRuta(ruta.id, editNombre.trim()); setEditandoRuta(false); }}
+                style={{ flex: 1, background: editNombre.trim() ? COLORS.ruta : COLORS.border, border: "none", borderRadius: 12, padding: "13px 0", color: editNombre.trim() ? COLORS.bg : COLORS.textMuted, fontSize: 14, fontWeight: 700, cursor: "pointer" }}>Guardar</button>
+              <button onClick={() => { onDeleteRuta(ruta.id); setEditandoRuta(false); }}
+                style={{ background: "#e05c5c22", border: "1px solid #e05c5c44", borderRadius: 12, padding: "13px 16px", cursor: "pointer", color: "#e05c5c", fontSize: 14, fontWeight: 700 }}>Eliminar</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal editar paso */}
+      {editandoStep && (
+        <div style={{ position: "fixed", inset: 0, background: "#000000bb", zIndex: 100, display: "flex", alignItems: "flex-end" }} onClick={() => setEditandoStep(null)}>
+          <div onClick={e => e.stopPropagation()} style={{ width: "100%", background: COLORS.surface, borderRadius: "20px 20px 0 0", padding: "20px 16px 28px", border: `1px solid ${COLORS.border}`, boxSizing: "border-box" }}>
+            <div style={{ width: 36, height: 4, background: COLORS.border, borderRadius: 2, margin: "0 auto 20px" }} />
+            <div style={{ fontSize: 16, fontWeight: 700, color: COLORS.text, marginBottom: 16 }}>Editar paso</div>
+            <input value={editStepLabel} onChange={e => setEditStepLabel(e.target.value)} placeholder="Nombre del paso"
+              style={{ width: "100%", background: COLORS.surfaceLight, border: `1px solid ${COLORS.border}`, borderRadius: 10, padding: "11px 14px", color: COLORS.text, fontSize: 14, outline: "none", marginBottom: 20, boxSizing: "border-box" }} />
+            <div style={{ display: "flex", gap: 8 }}>
+              <button onClick={() => { onEditStep(editandoStep.id, editStepLabel.trim()); setEditandoStep(null); }}
+                style={{ flex: 1, background: editStepLabel.trim() ? COLORS.ruta : COLORS.border, border: "none", borderRadius: 12, padding: "13px 0", color: editStepLabel.trim() ? COLORS.bg : COLORS.textMuted, fontSize: 14, fontWeight: 700, cursor: "pointer" }}>Guardar</button>
+              <button onClick={() => { onDeleteStep(editandoStep.id, ruta.id); setEditandoStep(null); }}
+                style={{ background: "#e05c5c22", border: "1px solid #e05c5c44", borderRadius: 12, padding: "13px 16px", cursor: "pointer", color: "#e05c5c", fontSize: 14, fontWeight: 700 }}>Eliminar</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
 
-export function RutaScreen() {
+export function RutaScreen({ onSumarPC }) {
   const [rutas, setRutas] = useState([]);
   const [stepsMap, setStepsMap] = useState({});
   const [selected, setSelected] = useState(null);
@@ -91,6 +142,7 @@ export function RutaScreen() {
   const markComplete = async (id) => {
     await supabase.from("rutas").update({ completed: true }).eq("id", id);
     setRutas(prev => prev.map(r => r.id === id ? { ...r, completed: true } : r));
+    if (onSumarPC) await onSumarPC("ruta");
   };
 
   const toggleStep = async (rutaId, stepId) => {
@@ -99,6 +151,33 @@ export function RutaScreen() {
     const newDone = !step.done;
     await supabase.from("ruta_steps").update({ done: newDone }).eq("id", stepId);
     setStepsMap(prev => ({ ...prev, [rutaId]: prev[rutaId].map(s => s.id === stepId ? { ...s, done: newDone } : s) }));
+  };
+
+  const editRuta = async (id, name) => {
+    await supabase.from("rutas").update({ name }).eq("id", id);
+    setRutas(prev => prev.map(r => r.id === id ? { ...r, name } : r));
+  };
+
+  const deleteRuta = async (id) => {
+    await supabase.from("rutas").delete().eq("id", id);
+    setRutas(prev => prev.filter(r => r.id !== id));
+    setSelected(null);
+  };
+
+  const editStep = async (stepId, label) => {
+    await supabase.from("ruta_steps").update({ label }).eq("id", stepId);
+    setStepsMap(prev => {
+      const updated = { ...prev };
+      for (const rid in updated) {
+        updated[rid] = updated[rid].map(s => s.id === stepId ? { ...s, label } : s);
+      }
+      return updated;
+    });
+  };
+
+  const deleteStep = async (stepId, rutaId) => {
+    await supabase.from("ruta_steps").delete().eq("id", stepId);
+    setStepsMap(prev => ({ ...prev, [rutaId]: prev[rutaId].filter(s => s.id !== stepId) }));
   };
 
   const addRuta = async () => {
@@ -120,8 +199,21 @@ export function RutaScreen() {
 
   if (selected !== null) {
     const ruta = rutas.find(r => r.id === selected);
+    if (!ruta) { setSelected(null); return null; }
     const steps = stepsMap[selected] || [];
-    return <RutaDetail ruta={ruta} steps={steps} onBack={() => setSelected(null)} onComplete={markComplete} onToggleStep={toggleStep} />;
+    return (
+      <RutaDetail
+        ruta={ruta}
+        steps={steps}
+        onBack={() => setSelected(null)}
+        onComplete={markComplete}
+        onToggleStep={toggleStep}
+        onEditRuta={editRuta}
+        onDeleteRuta={deleteRuta}
+        onEditStep={editStep}
+        onDeleteStep={deleteStep}
+      />
+    );
   }
 
   const activas = rutas.filter(r => !r.completed);
@@ -155,6 +247,7 @@ export function RutaScreen() {
           );
         })}
       </div>
+
       {showModal && (
         <div style={{ position: "fixed", inset: 0, background: "#000000bb", zIndex: 100, display: "flex", alignItems: "flex-end" }} onClick={() => setShowModal(false)}>
           <div onClick={e => e.stopPropagation()} style={{ width: "100%", background: COLORS.surface, borderRadius: "20px 20px 0 0", padding: "20px 16px 28px", border: `1px solid ${COLORS.border}`, boxSizing: "border-box", maxHeight: "80vh", overflowY: "auto" }}>

@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { supabase } from "./supabase";
 import { COLORS } from "./constants/colors";
 import { useGoogleAuth } from './services/useGoogleAuth';
+import { useCharacter } from './services/useCharacter';
 
 // Screens
 import { TodayScreen } from "./screens/TodayScreen";
@@ -18,6 +19,7 @@ import { JefesScreen } from "./screens/JefesScreen";
 import { CronicasScreen } from "./screens/CronicasScreen";
 import { BandejaScreen } from "./screens/BandejaScreen";
 import { ModalCapturar } from "./components/ModalCapturar";
+import { PersonajeScreen } from './screens/PersonajeScreen';
 
 const topTabs = [
   { key: "today", label: "Hoy" },
@@ -29,6 +31,7 @@ const topTabs = [
   { key: "jefes", label: "Jefes" },
   { key: "cronicas", label: "Crónicas" },
   { key: "archivo", label: "Archivo" },
+  { key: "personaje", label: "🧙" },
 ];
 
 const bottomTabs = [
@@ -44,12 +47,11 @@ export default function App() {
   const [showCapturar, setShowCapturar] = useState(false);
   const [desafios, setDesafios] = useState([]);
   const [archivo, setArchivo] = useState([]);
-  const [character, setCharacter] = useState(null);
+  const { character, nivelInfo, pct, levelUp, setLevelUp, sumarPC } = useCharacter();
   const { token: googleToken, ready: googleReady, conectar: conectarGoogle } = useGoogleAuth();
 
   useEffect(() => {
     fetchDesafios();
-    fetchCharacter();
   }, []);
 
   const fetchDesafios = async () => {
@@ -110,15 +112,16 @@ export default function App() {
       ) : (
         <div style={{ flex: 1, overflowY: "auto", padding: "20px 16px 0", scrollbarWidth: "none" }}>
           {screen === "bandeja" && <BandejaScreen />}
-          {screen === "misiones" && <MisionesScreen onBack={() => setTopTab("today")} onArchivar={archivar} />}
-          {screen === "terrenos" && <TerrenosScreen />}
-          {screen === "campanas" && <CampanasScreen onBack={() => setTopTab("today")} />}
-          {screen === "encargos" && <EncargosScreen onBack={() => setTopTab("today")} onArchivar={archivar} />}
-          {screen === "jefes" && <JefesScreen onBack={() => setTopTab("today")} onArchivar={archivar} />}
+          {screen === "misiones" && <MisionesScreen onBack={() => setTopTab("today")} onArchivar={archivar} onSumarPC={sumarPC} />}          
+          {screen === "terrenos" && <TerrenosScreen onSumarPC={sumarPC} />}
+          {screen === "campanas" && <CampanasScreen onBack={() => setTopTab("today")} onSumarPC={sumarPC} />}
+          {screen === "encargos" && <EncargosScreen onBack={() => setTopTab("today")} onArchivar={archivar} onSumarPC={sumarPC} />}
+          {screen === "jefes" && <JefesScreen onBack={() => setTopTab("today")} onArchivar={archivar} onSumarPC={sumarPC}/>}
           {screen === "cronicas" && <CronicasScreen />}
           {screen === "archivo" && <ArchivoScreen />}
-          {screen === "desafios" && <DesafiosScreen desafios={desafios} onTogglePin={togglePin} onAddDesafio={addDesafio} onBack={() => setBottomActive(null)} />}
-          {screen === "ruta" && <RutaScreen />}
+          {screen === "desafios" && <DesafiosScreen desafios={desafios} onTogglePin={togglePin} onAddDesafio={addDesafio} onBack={() => setBottomActive(null)} onSumarPC={sumarPC} />}
+          {screen === "ruta" && <RutaScreen onSumarPC={sumarPC} />}
+          {screen === "personaje" && <PersonajeScreen character={character} />}
           <div style={{ height: 80 }} />
         </div>
       )}

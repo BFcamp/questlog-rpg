@@ -5,11 +5,13 @@ import { Section } from "../components/Section";
 import { Checkbox } from "../components/Checkbox";
 import { Loading } from "../components/Loading";
 import { BitacoraScreen } from "./BitacoraScreen";
+import { PersonajeModal } from "./PersonajeScreen";
 
 export function TodayScreen({ pinnedDesafios, character, googleToken, onConectarGoogle }) {
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [subTab, setSubTab] = useState("hoy");
+  const [showPersonaje, setShowPersonaje] = useState(false);
 
   useEffect(() => { fetchTasks(); }, []);
 
@@ -31,8 +33,18 @@ export function TodayScreen({ pinnedDesafios, character, googleToken, onConectar
     terrainGroups[key].push(t);
   });
 
-  const xpPct = character ? Math.round((character.xp % 1000) / 10) : 0;
+  const xpPct = character ? Math.round(((character.xp - (getNivelMinPC(character.level))) / (getNivelSiguientePC(character.level) - getNivelMinPC(character.level))) * 100) : 0;
   const level = character ? character.level : 1;
+
+  function getNivelMinPC(nivel) {
+    const tabla = [0, 0, 1000, 2000, 3000, 4500, 7500, 12000, 18000, 26000, 36000];
+    return tabla[nivel] || 0;
+  }
+
+  function getNivelSiguientePC(nivel) {
+    const tabla = [0, 1000, 2000, 3000, 4500, 7500, 12000, 18000, 26000, 36000, 36000];
+    return tabla[nivel] || 36000;
+  }
 
   return (
     <div style={{ display: "flex", flexDirection: "column", height: "100%" }}>
@@ -40,16 +52,20 @@ export function TodayScreen({ pinnedDesafios, character, googleToken, onConectar
       {/* Solo visible en sub-tab Hoy */}
       {subTab === "hoy" && (
         <>
-          <div style={{ marginBottom: 20 }}>
+          <div style={{ marginBottom: 16 }}>
             <div style={{ fontSize: 22, fontWeight: 700, color: COLORS.text, fontFamily: "Georgia, serif" }}>Buenos días</div>
             <div style={{ fontSize: 13, color: COLORS.textMuted, marginTop: 2 }}>{tasks.filter(x => x.done).length}/{tasks.length} completadas hoy</div>
           </div>
-          <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 18 }}>
+
+          {/* Barra XP clickeable */}
+          <div
+            onClick={() => setShowPersonaje(true)}
+            style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 18, cursor: "pointer", background: COLORS.surface, borderRadius: 10, padding: "10px 12px", border: `1px solid ${COLORS.border}` }}>
             <div style={{ fontSize: 12, color: COLORS.textMuted }}>Nv {level}</div>
             <div style={{ flex: 1, height: 6, background: COLORS.border, borderRadius: 3, overflow: "hidden" }}>
-              <div style={{ width: `${xpPct}%`, height: "100%", background: COLORS.accent, borderRadius: 3 }} />
+              <div style={{ width: `${Math.min(100, Math.max(0, xpPct))}%`, height: "100%", background: COLORS.accent, borderRadius: 3 }} />
             </div>
-            <div style={{ fontSize: 11, color: COLORS.textMuted }}>{xpPct}%</div>
+            <div style={{ fontSize: 11, color: COLORS.accent }}>👁 ver</div>
           </div>
         </>
       )}
@@ -114,11 +130,14 @@ export function TodayScreen({ pinnedDesafios, character, googleToken, onConectar
         </>
       )}
 
-    {subTab === "bitacora" && (
-  <div style={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0, margin: "0 -16px" }}>
-    <BitacoraScreen googleToken={googleToken} onConectarGoogle={onConectarGoogle} />
-  </div>
-)}
+      {subTab === "bitacora" && (
+        <div style={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0, margin: "0 -16px" }}>
+          <BitacoraScreen googleToken={googleToken} onConectarGoogle={onConectarGoogle} />
+        </div>
+      )}
+
+      {/* Modal personaje */}
+      {showPersonaje && <PersonajeModal character={character} onClose={() => setShowPersonaje(false)} />}
 
     </div>
   );
