@@ -1,18 +1,8 @@
 import { useState, useRef, useEffect } from "react";
+import { supabase } from "../supabase";
 import { COLORS, typeColor } from "../constants/colors";
 import { Badge } from "../components/Badge";
 import { createCalendarEvent } from "../services/googleCalendar";
-
-const SLOT_POOL = [
-  { id: "m1", label: "Enviar informe Q2", type: "mision" },
-  { id: "m2", label: "Llamar al cliente", type: "mision" },
-  { id: "m3", label: "Reunión con dirección", type: "jefe" },
-  { id: "e1", label: "Comprar regalo cumpleaños", type: "encargo" },
-  { id: "e2", label: "Canilla que gotea", type: "encargo" },
-  { id: "c1", label: "Revisar mockups App", type: "campana" },
-  { id: "d1", label: "Meditar 10 minutos", type: "desafio" },
-  { id: "d2", label: "30 min de lectura", type: "desafio" },
-];
 
 const ALL_SLOTS = Array.from({ length: 48 }, (_, i) => {
   const h = Math.floor(i / 2);
@@ -27,8 +17,10 @@ function makeKey(date, time) { return `${date.toISOString().slice(0, 10)}|${time
 function TaskPanel({ tasks, assigned, onSelect, onClose }) {
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState("all");
-  const filters = ["all", "mision", "jefe", "campana", "encargo", "desafio", "ruta"];
+  const filters = ["all", "mision", "jefe", "campana", "encargo", "desafio", "rutina", "ruta"];
+  const filterLabels = { all: "Todas", mision: "Misión", jefe: "Jefe", campana: "Campaña", encargo: "Encargo", desafio: "Desafío", rutina: "Rutina", ruta: "Ruta" };
   const assignedIds = Object.values(assigned).map(t => t.id);
+
   const available = tasks.filter(t => {
     if (assignedIds.includes(t.id)) return false;
     if (filter !== "all" && t.type !== filter) return false;
@@ -39,7 +31,12 @@ function TaskPanel({ tasks, assigned, onSelect, onClose }) {
   return (
     <>
       <div onClick={onClose} style={{ position: "fixed", inset: 0, background: "#00000066", zIndex: 150 }} />
-      <div style={{ position: "fixed", bottom: 0, left: "50%", transform: "translateX(-50%)", width: "100%", maxWidth: 390, background: COLORS.surface, borderRadius: "20px 20px 0 0", border: `1px solid ${COLORS.border}`, zIndex: 200, display: "flex", flexDirection: "column", maxHeight: "70vh" }}>
+      <div style={{
+        position: "fixed", bottom: 0, left: "50%", transform: "translateX(-50%)",
+        width: "100%", maxWidth: 390, background: COLORS.surface,
+        borderRadius: "20px 20px 0 0", border: `1px solid ${COLORS.border}`,
+        zIndex: 200, display: "flex", flexDirection: "column", maxHeight: "70vh",
+      }}>
         <div style={{ padding: "12px 16px 0", flexShrink: 0 }}>
           <div style={{ width: 36, height: 4, background: COLORS.border, borderRadius: 2, margin: "0 auto 14px" }} />
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
@@ -51,7 +48,7 @@ function TaskPanel({ tasks, assigned, onSelect, onClose }) {
           <div style={{ display: "flex", gap: 6, overflowX: "auto", scrollbarWidth: "none", paddingBottom: 2, marginBottom: 12 }}>
             {filters.map(f => (
               <button key={f} onClick={() => setFilter(f)} style={{ flexShrink: 0, padding: "5px 10px", borderRadius: 20, fontSize: 10, fontWeight: 600, cursor: "pointer", whiteSpace: "nowrap", border: `1px solid ${filter === f ? typeColor(f === "all" ? "mision" : f) : COLORS.border}`, background: filter === f ? typeColor(f === "all" ? "mision" : f) + "22" : "transparent", color: filter === f ? COLORS.text : COLORS.textMuted }}>
-                {f === "all" ? "Todas" : f.charAt(0).toUpperCase() + f.slice(1)}
+                {filterLabels[f]}
               </button>
             ))}
           </div>
@@ -155,6 +152,15 @@ export function BitacoraScreen({ googleToken, onConectarGoogle }) {
   const [assignments, setAssignments] = useState({});
   const [showPanel, setShowPanel] = useState(false);
   const [pendingSlot, setPendingSlot] = useState(null);
+  const [tareasPendientes, setTareasPendientes] = useState([]);
+
+  useEffect(() => {
+    const fetchTareas = async () => {
+      const { data } = await supabase.from("tasks").select("*").eq("done", false);
+      if (data) setTareasPendientes(data.map(t => ({ id: t.id, label: t.label, type: t.type })));
+    };
+    fetchTareas();
+  }, []);
 
   const handleSlotTap = (key, dayForView) => {
     if (dayForView) setSelectedDay(dayForView);
@@ -221,7 +227,7 @@ export function BitacoraScreen({ googleToken, onConectarGoogle }) {
 
       {view === "3dias" && <ThreeDayView startDate={startDate} assignments={assignments} onSlotTap={handleSlotTap} onRemove={handleRemove} onDaySelect={handleDaySelect} />}
       {view === "dia" && <DayView date={selectedDay} assignments={assignments} onSlotTap={(key) => handleSlotTap(key)} onRemove={handleRemove} />}
-      {showPanel && <TaskPanel tasks={SLOT_POOL} assigned={assignments} onSelect={handleSelect} onClose={() => { setShowPanel(false); setPendingSlot(null); }} />}
+      {showPanel && <TaskPanel tasks={tareasPendientes} assigned={assignments} onSelect={handleSelect} onClose={() => { setShowPanel(false); setPendingSlot(null); }} />}
     </div>
   );
 }
