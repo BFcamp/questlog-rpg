@@ -17,19 +17,20 @@ import { ArchivoScreen } from "./screens/ArchivoScreen";
 import { BitacoraScreen } from "./screens/BitacoraScreen";
 import { JefesScreen } from "./screens/JefesScreen";
 import { CronicasScreen } from "./screens/CronicasScreen";
-import { BandejaScreen } from "./screens/BandejaScreen";
 import { ModalCapturar } from "./components/ModalCapturar";
 import { PersonajeScreen } from './screens/PersonajeScreen';
+import { ExperimentosScreen } from './screens/ExperimentosScreen';
 
 const topTabs = [
   { key: "today", label: "Hoy" },
-  { key: "bandeja", label: "Bandeja" },
+  { key: "bitacora", label: "Bitácora" },
   { key: "misiones", label: "Misiones" },
   { key: "terrenos", label: "Terrenos" },
   { key: "campanas", label: "Campañas" },
   { key: "encargos", label: "Encargos" },
   { key: "jefes", label: "Jefes" },
   { key: "cronicas", label: "Crónicas" },
+  { key: "experimentos", label: "Experimentos" },
   { key: "archivo", label: "Archivo" },
   { key: "personaje", label: "🧙" },
 ];
@@ -57,15 +58,6 @@ export default function App() {
   const fetchDesafios = async () => {
     const { data } = await supabase.from("desafios").select("*");
     if (data) setDesafios(data);
-  };
-
-  const fetchCharacter = async () => {
-    const { data } = await supabase.from("character").select("*").limit(1);
-    if (data && data.length > 0) setCharacter(data[0]);
-    else {
-      const { data: newChar } = await supabase.from("character").insert([{ level: 1, xp: 0 }]).select();
-      if (newChar) setCharacter(newChar[0]);
-    }
   };
 
   const archivar = async (item) => {
@@ -106,18 +98,19 @@ export default function App() {
 
       {/* Contenido */}
       {screen === "today" ? (
-  <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", padding: "20px 16px 0" }}>
-    <TodayScreen pinnedDesafios={pinnedDesafios} character={character} googleToken={googleToken} onConectarGoogle={conectarGoogle} />
-  </div>
+        <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", padding: "20px 16px 0" }}>
+          <TodayScreen pinnedDesafios={pinnedDesafios} character={character} googleToken={googleToken} onConectarGoogle={conectarGoogle} onSumarPC={sumarPC} />
+        </div>
       ) : (
         <div style={{ flex: 1, overflowY: "auto", padding: "20px 16px 0", scrollbarWidth: "none" }}>
-          {screen === "bandeja" && <BandejaScreen />}
-          {screen === "misiones" && <MisionesScreen onBack={() => setTopTab("today")} onArchivar={archivar} onSumarPC={sumarPC} />}          
+          {screen === "bitacora" && <BitacoraScreen googleToken={googleToken} onConectarGoogle={conectarGoogle} />}
+          {screen === "misiones" && <MisionesScreen onBack={() => setTopTab("today")} onArchivar={archivar} onSumarPC={sumarPC} />}
           {screen === "terrenos" && <TerrenosScreen onSumarPC={sumarPC} />}
           {screen === "campanas" && <CampanasScreen onBack={() => setTopTab("today")} onSumarPC={sumarPC} />}
           {screen === "encargos" && <EncargosScreen onBack={() => setTopTab("today")} onArchivar={archivar} onSumarPC={sumarPC} />}
           {screen === "jefes" && <JefesScreen onBack={() => setTopTab("today")} onArchivar={archivar} onSumarPC={sumarPC}/>}
           {screen === "cronicas" && <CronicasScreen />}
+          {screen === "experimentos" && <ExperimentosScreen />}
           {screen === "archivo" && <ArchivoScreen />}
           {screen === "desafios" && <DesafiosScreen desafios={desafios} onTogglePin={togglePin} onAddDesafio={addDesafio} onBack={() => setBottomActive(null)} onSumarPC={sumarPC} />}
           {screen === "ruta" && <RutaScreen onSumarPC={sumarPC} />}
